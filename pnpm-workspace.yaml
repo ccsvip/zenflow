@@ -1,0 +1,5 @@
+# pnpm v11 配置文件
+# sharp 是 Next.js 在生产环境下的可选图像优化依赖。
+# 开发模式下不需要其原生构建，显式拒绝运行其构建脚本以避免 ERR_PNPM_IGNORED_BUILDS。
+allowBuilds:
+  sharp: false
