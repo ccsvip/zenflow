@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.kiro
+.vscode
+.vercel
+out
+build
+coverage
+**/*.log
+.env
+.env.*.local
+README*.md
+AGENTS.md
+ralph-loop-kiro-specs-*
+# pnpm v11 的 workspace 配置文件容器内不需要，且会被 v9 误判为 monorepo
+pnpm-workspace.yaml

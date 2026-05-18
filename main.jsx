@@ -312,6 +312,19 @@ export default function App() {
     );
   };
 
+  const handleDeleteRequirement = async (id) => {
+    const target = requirements.find((r) => r.id === id);
+    const ok = await confirm({
+      title: '删除需求',
+      description: `确定要删除「${target?.title ?? '该需求'}」吗？`,
+      confirmText: '删除',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setRequirements(requirements.filter((r) => r.id !== id));
+    toast.success('需求已删除');
+  };
+
   // 任务 CRUD
   const handleSaveTask = (e) => {
     e.preventDefault();
@@ -373,6 +386,19 @@ export default function App() {
     } else {
       toast.success('已恢复任务');
     }
+  };
+
+  const handleDeleteTask = async (id) => {
+    const target = tasks.find((t) => t.id === id);
+    const ok = await confirm({
+      title: '删除任务',
+      description: `确定要删除「${target?.title ?? '该任务'}」吗？`,
+      confirmText: '删除',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    setTasks(tasks.filter((t) => t.id !== id));
+    toast.success('任务已删除');
   };
 
   // Bug CRUD
@@ -1045,20 +1071,29 @@ export default function App() {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
-                    <select
-                      value={req.status}
-                      onChange={(e) =>
-                        handleChangeReqStatus(req.id, e.target.value)
-                      }
-                      aria-label={`修改需求 ${req.title} 的状态`}
-                      className="text-sm border border-slate-300 rounded px-2 py-1 outline-none focus:border-blue-500 bg-white"
-                    >
-                      {Object.entries(reqStatusMap).map(([key, val]) => (
-                        <option key={key} value={key}>
-                          {val.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-center justify-center gap-2">
+                      <select
+                        value={req.status}
+                        onChange={(e) =>
+                          handleChangeReqStatus(req.id, e.target.value)
+                        }
+                        aria-label={`修改需求 ${req.title} 的状态`}
+                        className="text-sm border border-slate-300 rounded px-2 py-1 outline-none focus:border-blue-500 bg-white"
+                      >
+                        {Object.entries(reqStatusMap).map(([key, val]) => (
+                          <option key={key} value={key}>
+                            {val.label}
+                          </option>
+                        ))}
+                      </select>
+                      <IconButton
+                        label="删除需求"
+                        tone="danger"
+                        onClick={() => handleDeleteRequirement(req.id)}
+                      >
+                        <Trash2 size={14} />
+                      </IconButton>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1334,25 +1369,39 @@ export default function App() {
                           ].join(' ')}
                         >
                           {/* 归档 / 恢复 快捷按钮 */}
-                          <button
-                            type="button"
-                            aria-label={isArchived ? '从归档恢复' : '归档任务'}
-                            title={isArchived ? '恢复到待办' : '归档任务'}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleChangeTaskStatus(
-                                task.id,
-                                isArchived ? 'todo' : 'archived',
-                              );
-                            }}
-                            className="absolute top-2 right-2 p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
-                          >
-                            {isArchived ? (
-                              <ArchiveRestore size={14} />
-                            ) : (
-                              <Archive size={14} />
-                            )}
-                          </button>
+                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                            <button
+                              type="button"
+                              aria-label={isArchived ? '从归档恢复' : '归档任务'}
+                              title={isArchived ? '恢复到待办' : '归档任务'}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleChangeTaskStatus(
+                                  task.id,
+                                  isArchived ? 'todo' : 'archived',
+                                );
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50"
+                            >
+                              {isArchived ? (
+                                <ArchiveRestore size={14} />
+                              ) : (
+                                <Archive size={14} />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="删除任务"
+                              title="删除任务"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteTask(task.id);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
 
                           <div className="flex justify-between items-start mb-2 pr-6">
                             <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded max-w-[120px] truncate">
