@@ -12,9 +12,9 @@ module.exports = {
     {
       pattern: /^(bg|text)-(blue|cyan|amber|red)-(50|100|600)$/,
     },
-    // 任务看板：col.color in ['slate', 'blue', 'green']
+    // 任务看板：col.color in ['slate', 'blue', 'green', 'amber']
     {
-      pattern: /^bg-(slate|blue|green)-500$/,
+      pattern: /^bg-(slate|blue|green|amber)-500$/,
     },
   ],
   theme: {

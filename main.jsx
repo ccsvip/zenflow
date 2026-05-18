@@ -23,6 +23,9 @@ import {
   Menu,
   X,
   Inbox,
+  Archive,
+  ArchiveRestore,
+  Calendar,
 } from 'lucide-react';
 
 import { useLocalStorage } from '@/lib/useLocalStorage';
@@ -68,6 +71,8 @@ export default function App() {
       {
         id: 'R-1',
         title: '跳过播放',
+        description: '在数字人播放过程中允许用户随时跳过当前段落，立即进入下一段。',
+        stakeholder: '产品-王小一',
         projectId: '02',
         priority: 'medium',
         status: 'developing',
@@ -75,6 +80,8 @@ export default function App() {
       {
         id: 'R-2',
         title: '边走边播',
+        description: '允许用户在移动端切换页面时不打断当前数字人语音播放。',
+        stakeholder: '业务方-李四',
         projectId: '02',
         priority: 'medium',
         status: 'draft',
@@ -91,6 +98,7 @@ export default function App() {
       projectId: '01',
       priority: 'high',
       assignee: '张三',
+      startDate: '',
       status: 'todo',
     },
     {
@@ -100,6 +108,7 @@ export default function App() {
       projectId: '02',
       priority: 'medium',
       assignee: '李四',
+      startDate: '',
       status: 'doing',
     },
   ]);
@@ -127,7 +136,14 @@ export default function App() {
 
   const [reqModal, setReqModal] = useState({
     isOpen: false,
-    data: { title: '', projectId: '', priority: 'medium', status: 'draft' },
+    data: {
+      title: '',
+      description: '',
+      stakeholder: '',
+      projectId: '',
+      priority: 'medium',
+      status: 'draft',
+    },
   });
   const [reqErrors, setReqErrors] = useState({});
   const [reqFilter, setReqFilter] = useState({
@@ -145,6 +161,7 @@ export default function App() {
       projectId: '',
       priority: 'medium',
       assignee: '',
+      startDate: '',
     },
   });
   const [taskErrors, setTaskErrors] = useState({});
@@ -342,6 +359,20 @@ export default function App() {
     );
     setDragOverColumn(null);
     setDraggingTaskId(null);
+  };
+
+  // 通过按钮直接切换任务状态（归档 / 恢复时使用）
+  const handleChangeTaskStatus = (taskId, newStatus) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task,
+      ),
+    );
+    if (newStatus === 'archived') {
+      toast.success('任务已归档');
+    } else {
+      toast.success('已恢复任务');
+    }
   };
 
   // Bug CRUD
@@ -888,6 +919,8 @@ export default function App() {
                 isOpen: true,
                 data: {
                   title: '',
+                  description: '',
+                  stakeholder: '',
                   projectId: projects[0]?.id || '',
                   priority: 'medium',
                   status: 'draft',
@@ -986,7 +1019,13 @@ export default function App() {
                   className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                 >
                   <td className="py-4 px-4 text-sm font-medium text-slate-800">
-                    {req.title}
+                    <div>{req.title}</div>
+                    {req.stakeholder && (
+                      <div className="text-xs text-slate-400 mt-0.5 flex items-center">
+                        <User size={11} className="mr-1" />
+                        需求方：{req.stakeholder}
+                      </div>
+                    )}
                   </td>
                   <td className="py-4 px-4 text-sm text-slate-600">
                     {getProjectName(req.projectId)}
@@ -1102,6 +1141,39 @@ export default function App() {
                 message={reqErrors.projectId}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                需求方
+              </label>
+              <input
+                value={reqModal.data.stakeholder || ''}
+                onChange={(e) =>
+                  setReqModal({
+                    ...reqModal,
+                    data: { ...reqModal.data, stakeholder: e.target.value },
+                  })
+                }
+                placeholder="例如：产品-张三、业务方-某客户"
+                className={inputClass(false)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                需求描述
+              </label>
+              <textarea
+                rows="3"
+                value={reqModal.data.description || ''}
+                onChange={(e) =>
+                  setReqModal({
+                    ...reqModal,
+                    data: { ...reqModal.data, description: e.target.value },
+                  })
+                }
+                placeholder="补充背景、目标与验收标准..."
+                className={inputClass(false)}
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -1161,6 +1233,7 @@ export default function App() {
       { id: 'todo', title: '待办事项', color: 'slate' },
       { id: 'doing', title: '进行中', color: 'blue' },
       { id: 'done', title: '已完成', color: 'green' },
+      { id: 'archived', title: '已归档', color: 'amber' },
     ];
 
     return (
@@ -1184,6 +1257,7 @@ export default function App() {
                   projectId: projects[0]?.id || '',
                   priority: 'medium',
                   assignee: '',
+                  startDate: '',
                 },
               })
             }
@@ -1199,7 +1273,7 @@ export default function App() {
               <div
                 key={col.id}
                 className={[
-                  'rounded-xl p-4 min-w-[320px] flex flex-col transition-all',
+                  'rounded-xl p-4 flex-1 min-w-[320px] flex flex-col transition-all',
                   isDropTarget
                     ? 'bg-blue-50 border-2 border-blue-400 border-dashed shadow-inner'
                     : 'bg-slate-100/50 border border-slate-200',
@@ -1236,6 +1310,7 @@ export default function App() {
                     .filter((t) => t.status === col.id)
                     .map((task) => {
                       const isDragging = draggingTaskId === task.id;
+                      const isArchived = task.status === 'archived';
                       return (
                         <div
                           key={task.id}
@@ -1250,13 +1325,36 @@ export default function App() {
                             })
                           }
                           className={[
-                            'bg-white p-4 rounded-lg shadow-sm border cursor-move transition-all group',
+                            'relative bg-white p-4 rounded-lg shadow-sm border cursor-move transition-all group',
                             isDragging
                               ? 'opacity-40 ring-2 ring-blue-400 scale-[0.98]'
+                              : isArchived
+                              ? 'border-slate-200 opacity-60 hover:opacity-90 hover:border-amber-300'
                               : 'border-slate-200 hover:shadow-md hover:border-blue-300',
                           ].join(' ')}
                         >
-                          <div className="flex justify-between items-start mb-2">
+                          {/* 归档 / 恢复 快捷按钮 */}
+                          <button
+                            type="button"
+                            aria-label={isArchived ? '从归档恢复' : '归档任务'}
+                            title={isArchived ? '恢复到待办' : '归档任务'}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleChangeTaskStatus(
+                                task.id,
+                                isArchived ? 'todo' : 'archived',
+                              );
+                            }}
+                            className="absolute top-2 right-2 p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition"
+                          >
+                            {isArchived ? (
+                              <ArchiveRestore size={14} />
+                            ) : (
+                              <Archive size={14} />
+                            )}
+                          </button>
+
+                          <div className="flex justify-between items-start mb-2 pr-6">
                             <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded max-w-[120px] truncate">
                               {getProjectName(task.projectId)}
                             </span>
@@ -1268,7 +1366,11 @@ export default function App() {
                           </div>
 
                           <h4
-                            className={`text-sm font-bold mb-2 ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}`}
+                            className={`text-sm font-bold mb-2 ${
+                              task.status === 'done' || isArchived
+                                ? 'line-through text-slate-400'
+                                : 'text-slate-800'
+                            }`}
                           >
                             {task.title}
                           </h4>
@@ -1282,9 +1384,15 @@ export default function App() {
                           )}
 
                           <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-                            <span className="text-xs text-slate-400">
-                              {task.id}
-                            </span>
+                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                              <span>{task.id}</span>
+                              {task.startDate && (
+                                <span className="flex items-center text-slate-500">
+                                  <Calendar size={11} className="mr-0.5" />
+                                  {task.startDate.slice(5)}
+                                </span>
+                              )}
+                            </div>
                             {task.assignee && (
                               <div className="flex items-center text-xs text-slate-500 bg-slate-50 px-2 py-1 rounded-full">
                                 <User size={12} className="mr-1" />{' '}
@@ -1410,24 +1518,42 @@ export default function App() {
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                优先级
-              </label>
-              <select
-                value={taskModal.data.priority || 'medium'}
-                onChange={(e) =>
-                  setTaskModal({
-                    ...taskModal,
-                    data: { ...taskModal.data, priority: e.target.value },
-                  })
-                }
-                className={inputClass(false)}
-              >
-                <option value="high">高</option>
-                <option value="medium">中</option>
-                <option value="low">低</option>
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  优先级
+                </label>
+                <select
+                  value={taskModal.data.priority || 'medium'}
+                  onChange={(e) =>
+                    setTaskModal({
+                      ...taskModal,
+                      data: { ...taskModal.data, priority: e.target.value },
+                    })
+                  }
+                  className={inputClass(false)}
+                >
+                  <option value="high">高</option>
+                  <option value="medium">中</option>
+                  <option value="low">低</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  起始日期
+                </label>
+                <input
+                  type="date"
+                  value={taskModal.data.startDate || ''}
+                  onChange={(e) =>
+                    setTaskModal({
+                      ...taskModal,
+                      data: { ...taskModal.data, startDate: e.target.value },
+                    })
+                  }
+                  className={inputClass(false)}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
               <Button variant="secondary" onClick={closeTaskModal}>
@@ -2125,7 +2251,9 @@ export default function App() {
           <span className="w-6" />
         </div>
 
-        <div className="p-4 sm:p-8 max-w-[1400px] mx-auto h-full">
+        <div
+          className={`p-4 sm:p-8 ${activeMenu === 'tasks' ? 'max-w-none' : 'max-w-[1400px]'} mx-auto h-full`}
+        >
           {activeMenu === 'overview' && renderOverview()}
           {activeMenu === 'projects' && renderProjects()}
           {activeMenu === 'requirements' && renderRequirements()}
