@@ -48,8 +48,16 @@ const API_ENDPOINTS = {
 };
 
 const ZENFLOW_SESSION_KEY = 'zenflow-session';
-const MAX_ATTACHMENT_FILES = 5;
-const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+const REQUIREMENT_ATTACHMENT_MAX_FILES = 5;
+const REQUIREMENT_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024;
+const BUG_ATTACHMENT_MAX_FILES = 10;
+const BUG_ATTACHMENT_MAX_SIZE = 100 * 1024 * 1024;
+
+const formatFileSize = (size) => {
+  if (!Number.isFinite(size)) return '';
+  if (size >= 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(size / 1024))} KB`;
+};
 
 const fileToAttachment = (file) =>
   new Promise((resolve, reject) => {
@@ -254,32 +262,53 @@ export default function App() {
     return p ? p.name : '未知项目';
   };
 
-  const renderAttachments = (attachments = []) => {
+  const renderAttachments = (
+    attachments = [],
+    { showMeta = false, canRemove = false, onRemove } = {},
+  ) => {
     if (!attachments.length) return null;
 
     return (
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
         {attachments.map((attachment) => (
           <div
             key={attachment.id || attachment.name}
-            className="rounded border border-slate-200 bg-slate-50 p-2"
+            className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
           >
-            <div className="mb-2 truncate text-xs font-medium text-slate-600">
-              {attachment.name}
-            </div>
             {attachment.type?.startsWith('image/') ? (
               <img
                 src={attachment.dataUrl}
                 alt={attachment.name}
-                className="max-h-40 w-full rounded object-cover"
+                className="h-40 w-full object-cover"
               />
             ) : attachment.type?.startsWith('video/') ? (
               <video
                 src={attachment.dataUrl}
                 controls
-                className="max-h-40 w-full rounded"
+                className="h-40 w-full bg-slate-950 object-contain"
               />
             ) : null}
+            <div className="flex items-start justify-between gap-2 p-2">
+              <div className="min-w-0">
+                <div className="truncate text-xs font-medium text-slate-700">
+                  {attachment.name}
+                </div>
+                {showMeta && (
+                  <div className="mt-0.5 text-[11px] text-slate-400">
+                    {formatFileSize(attachment.size)}
+                  </div>
+                )}
+              </div>
+              {canRemove && (
+                <button
+                  type="button"
+                  onClick={() => onRemove?.(attachment.id)}
+                  className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
+                >
+                  移除
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -288,18 +317,29 @@ export default function App() {
 
   const handleAttachmentChange = async (kind, fileList) => {
     const files = Array.from(fileList || []);
-    if (files.length > MAX_ATTACHMENT_FILES) {
-      toast.error(`最多上传 ${MAX_ATTACHMENT_FILES} 个附件`);
+    const isBug = kind === 'bug';
+    const maxFiles = isBug
+      ? BUG_ATTACHMENT_MAX_FILES
+      : REQUIREMENT_ATTACHMENT_MAX_FILES;
+    const maxSize = isBug
+      ? BUG_ATTACHMENT_MAX_SIZE
+      : REQUIREMENT_ATTACHMENT_MAX_SIZE;
+    const currentAttachments = isBug
+      ? bugModal.data.attachments || []
+      : [];
+
+    if (files.length + currentAttachments.length > maxFiles) {
+      toast.error(`最多上传 ${maxFiles} 个附件`);
       return;
     }
 
     const invalidFile = files.find(
       (file) =>
-        file.size > MAX_ATTACHMENT_SIZE ||
+        file.size > maxSize ||
         !file.type.match(/^(image|video)\//),
     );
     if (invalidFile) {
-      toast.error('仅支持 10MB 以内的图片或视频');
+      toast.error(`仅支持 ${formatFileSize(maxSize)} 以内的图片或视频`);
       return;
     }
 
@@ -314,8 +354,28 @@ export default function App() {
 
     setBugModal({
       ...bugModal,
-      data: { ...bugModal.data, attachments },
+      data: {
+        ...bugModal.data,
+        attachments: [
+          ...(bugModal.data.attachments || []),
+          ...attachments,
+        ],
+      },
     });
+  };
+
+  const removeAttachment = (kind, attachmentId) => {
+    if (kind === 'bug') {
+      setBugModal({
+        ...bugModal,
+        data: {
+          ...bugModal.data,
+          attachments: (bugModal.data.attachments || []).filter(
+            (attachment) => attachment.id !== attachmentId,
+          ),
+        },
+      });
+    }
   };
 
   const closeProjectModal = () => {
@@ -2065,7 +2125,7 @@ export default function App() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                附件（图片/视频）
+                素材（图片/视频）
               </label>
               <input
                 type="file"
@@ -2074,7 +2134,22 @@ export default function App() {
                 onChange={(e) => handleAttachmentChange('bug', e.target.files)}
                 className={inputClass(false, 'red')}
               />
-              {renderAttachments(bugModal.data.attachments)}
+              {bugModal.data.attachments?.length ? (
+                <div>
+                  <div className="mt-3 text-xs font-medium text-slate-500">
+                    素材预览
+                  </div>
+                  {renderAttachments(bugModal.data.attachments, {
+                    showMeta: true,
+                    canRemove: true,
+                    onRemove: (id) => removeAttachment('bug', id),
+                  })}
+                </div>
+              ) : (
+                <div className="mt-2 rounded border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-400">
+                  未选择素材
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
