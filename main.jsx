@@ -28,7 +28,6 @@ import {
   Calendar,
 } from 'lucide-react';
 
-import { useLocalStorage } from '@/lib/useLocalStorage';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
 import { Modal } from '@/components/ui/Modal';
@@ -37,94 +36,75 @@ import { FieldError } from '@/components/ui/FieldError';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
+const API_ENDPOINTS = {
+  data: '/api/data',
+  users: '/api/users',
+  projects: '/api/projects',
+  requirements: '/api/requirements',
+  tasks: '/api/tasks',
+  bugs: '/api/bugs',
+  login: '/api/auth/login',
+  password: '/api/auth/password',
+};
+
+const ZENFLOW_SESSION_KEY = 'zenflow-session';
+const MAX_ATTACHMENT_FILES = 5;
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+
+const fileToAttachment = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () =>
+      resolve({
+        id: `${file.name}-${file.lastModified}-${file.size}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dataUrl: reader.result,
+      });
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+const requestJson = async (url, options = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || '\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5');
+  }
+  return data;
+};
+
+const saveRecord = (collection, payload, id) =>
+  requestJson(id ? `${collection}/${id}` : collection, {
+    method: id ? 'PUT' : 'POST',
+    body: JSON.stringify(payload),
+  });
+
+const deleteRecord = (collection, id) =>
+  requestJson(`${collection}/${id}`, { method: 'DELETE' });
+
 export default function App() {
   // --- 1. 全局数据状态（接入 localStorage 持久化） ---
-  const [users, setUsers] = useLocalStorage('zenflow.users', [
-    { id: '1', username: 'root', password: '123456', role: 'admin' },
-  ]);
-  const [currentUser, setCurrentUser] = useLocalStorage(
-    'zenflow.currentUser',
-    null,
-  );
+  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [activeMenu, setActiveMenu] = useState('overview');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const [projects, setProjects] = useLocalStorage('zenflow.projects', [
-    {
-      id: '02',
-      name: '泉州移动数字人项目',
-      description: '基于大模型的数字人互动系统，支持语音识别与生成。',
-      status: 'active',
-    },
-    {
-      id: '01',
-      name: '云端后台开发',
-      description: '重构现有的后台管理系统，提升性能。',
-      status: 'planning',
-    },
-  ]);
+  const [projects, setProjects] = useState([]);
 
-  const [requirements, setRequirements] = useLocalStorage(
-    'zenflow.requirements',
-    [
-      {
-        id: 'R-1',
-        title: '跳过播放',
-        description: '在数字人播放过程中允许用户随时跳过当前段落，立即进入下一段。',
-        stakeholder: '产品-王小一',
-        projectId: '02',
-        priority: 'medium',
-        status: 'developing',
-      },
-      {
-        id: 'R-2',
-        title: '边走边播',
-        description: '允许用户在移动端切换页面时不打断当前数字人语音播放。',
-        stakeholder: '业务方-李四',
-        projectId: '02',
-        priority: 'medium',
-        status: 'draft',
-      },
-    ],
-  );
+  const [requirements, setRequirements] = useState([]);
 
-  const [tasks, setTasks] = useLocalStorage('zenflow.tasks', [
-    {
-      id: 'T-1',
-      title: '完成登录页面UI',
-      description:
-        '按照Figma设计稿，实现支持响应式的登录页面。包含账号密码和验证码登录。',
-      projectId: '01',
-      priority: 'high',
-      assignee: '张三',
-      startDate: '',
-      status: 'todo',
-    },
-    {
-      id: 'T-2',
-      title: '搭建基础项目骨架',
-      description: '初始化React项目，配置TailwindCSS，封装基础Axios请求。',
-      projectId: '02',
-      priority: 'medium',
-      assignee: '李四',
-      startDate: '',
-      status: 'doing',
-    },
-  ]);
+  const [tasks, setTasks] = useState([]);
 
-  const [bugs, setBugs] = useLocalStorage('zenflow.bugs', [
-    {
-      id: 'B-1',
-      title: '首屏加载白屏时间过长',
-      projectId: '01',
-      steps: '1. 清理浏览器缓存\n2. 访问首页\n3. 观察首屏出现时间大于5秒',
-      priority: 'high',
-      severity: 'major',
-      status: 'open',
-      assignee: '前端大牛',
-    },
-  ]);
+  const [bugs, setBugs] = useState([]);
 
   // --- 2. 弹窗与表单状态管理 ---
   const [projectModal, setProjectModal] = useState({
@@ -143,6 +123,7 @@ export default function App() {
       projectId: '',
       priority: 'medium',
       status: 'draft',
+      attachments: [],
     },
   });
   const [reqErrors, setReqErrors] = useState({});
@@ -177,6 +158,7 @@ export default function App() {
       severity: 'major',
       assignee: '',
       status: 'open',
+      attachments: [],
     },
   });
   const [bugErrors, setBugErrors] = useState({});
@@ -197,7 +179,9 @@ export default function App() {
   });
   const [userErrors, setUserErrors] = useState({});
 
-  const [loginData, setLoginData] = useState({ username: 'root', password: '123456' });
+  const [loginData, setLoginData] = useState({ username: 'root', password: '1314520sm' });
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState('');
   const [loginError, setLoginError] = useState('');
 
   // 看板拖拽视觉反馈
@@ -207,15 +191,131 @@ export default function App() {
   const toast = useToast();
   const confirm = useConfirm();
 
+  const clearStoredSession = () => {
+    window.localStorage.removeItem(ZENFLOW_SESSION_KEY);
+    setCurrentUser(null);
+  };
+
+  const persistSession = (session) => {
+    window.localStorage.setItem(ZENFLOW_SESSION_KEY, JSON.stringify(session));
+    setCurrentUser(session.user);
+  };
+
+  const loadData = async () => {
+    setDataLoading(true);
+    setDataError('');
+    try {
+      const data = await requestJson(API_ENDPOINTS.data);
+      setUsers(data.users || []);
+      setProjects(data.projects || []);
+      setRequirements(data.requirements || []);
+      setTasks(data.tasks || []);
+      setBugs(data.bugs || []);
+      return data;
+    } catch (err) {
+      const message = err.message || '\u6570\u636e\u52a0\u8f7d\u5931\u8d25';
+      setDataError(message);
+      toast.error(message);
+      return null;
+    } finally {
+      setDataLoading(false);
+    }
+  };
+
   // 切换主菜单时收起移动端抽屉
   useEffect(() => {
     setMobileNavOpen(false);
   }, [activeMenu]);
 
+  useEffect(() => {
+    const raw = window.localStorage.getItem(ZENFLOW_SESSION_KEY);
+    if (!raw) return;
+
+    try {
+      const session = JSON.parse(raw);
+      if (!session?.user || session.expiresAt <= Date.now()) {
+        window.localStorage.removeItem(ZENFLOW_SESSION_KEY);
+        return;
+      }
+      setCurrentUser(session.user);
+    } catch {
+      window.localStorage.removeItem(ZENFLOW_SESSION_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    loadData();
+  }, [currentUser?.id]);
+
   // --- 3. 辅助函数 ---
   const getProjectName = (projectId) => {
     const p = projects.find((it) => it.id === projectId);
     return p ? p.name : '未知项目';
+  };
+
+  const renderAttachments = (attachments = []) => {
+    if (!attachments.length) return null;
+
+    return (
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {attachments.map((attachment) => (
+          <div
+            key={attachment.id || attachment.name}
+            className="rounded border border-slate-200 bg-slate-50 p-2"
+          >
+            <div className="mb-2 truncate text-xs font-medium text-slate-600">
+              {attachment.name}
+            </div>
+            {attachment.type?.startsWith('image/') ? (
+              <img
+                src={attachment.dataUrl}
+                alt={attachment.name}
+                className="max-h-40 w-full rounded object-cover"
+              />
+            ) : attachment.type?.startsWith('video/') ? (
+              <video
+                src={attachment.dataUrl}
+                controls
+                className="max-h-40 w-full rounded"
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const handleAttachmentChange = async (kind, fileList) => {
+    const files = Array.from(fileList || []);
+    if (files.length > MAX_ATTACHMENT_FILES) {
+      toast.error(`最多上传 ${MAX_ATTACHMENT_FILES} 个附件`);
+      return;
+    }
+
+    const invalidFile = files.find(
+      (file) =>
+        file.size > MAX_ATTACHMENT_SIZE ||
+        !file.type.match(/^(image|video)\//),
+    );
+    if (invalidFile) {
+      toast.error('仅支持 10MB 以内的图片或视频');
+      return;
+    }
+
+    const attachments = await Promise.all(files.map(fileToAttachment));
+    if (kind === 'requirement') {
+      setReqModal({
+        ...reqModal,
+        data: { ...reqModal.data, attachments },
+      });
+      return;
+    }
+
+    setBugModal({
+      ...bugModal,
+      data: { ...bugModal.data, attachments },
+    });
   };
 
   const closeProjectModal = () => {
@@ -246,7 +346,7 @@ export default function App() {
   // --- 4. 业务处理函数 ---
 
   // 项目 CRUD
-  const handleSaveProject = (e) => {
+  const handleSaveProject = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!projectModal.data.name?.trim()) errors.name = '项目名称不能为空';
@@ -256,19 +356,23 @@ export default function App() {
     }
 
     if (projectModal.isEdit) {
+      const savedProject = await saveRecord(
+        API_ENDPOINTS.projects,
+        projectModal.data,
+        projectModal.data.id,
+      );
       setProjects(
         projects.map((p) =>
-          p.id === projectModal.data.id ? projectModal.data : p,
+          p.id === savedProject.id ? savedProject : p,
         ),
       );
       toast.success('项目已更新');
     } else {
-      const newId = String(
-        projects.length > 0
-          ? Math.max(...projects.map((p) => parseInt(p.id, 10))) + 1
-          : 1,
-      ).padStart(2, '0');
-      setProjects([{ ...projectModal.data, id: newId }, ...projects]);
+      const savedProject = await saveRecord(
+        API_ENDPOINTS.projects,
+        projectModal.data,
+      );
+      setProjects([savedProject, ...projects]);
       toast.success('项目已创建');
     }
     closeProjectModal();
@@ -284,12 +388,16 @@ export default function App() {
       tone: 'danger',
     });
     if (!ok) return;
+    await deleteRecord(API_ENDPOINTS.projects, id);
     setProjects(projects.filter((p) => p.id !== id));
+    setRequirements(requirements.filter((r) => r.projectId !== id));
+    setTasks(tasks.filter((t) => t.projectId !== id));
+    setBugs(bugs.filter((b) => b.projectId !== id));
     toast.success('项目已删除');
   };
 
   // 需求 CRUD
-  const handleSaveRequirement = (e) => {
+  const handleSaveRequirement = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!reqModal.data.title?.trim()) errors.title = '需求标题不能为空';
@@ -298,16 +406,26 @@ export default function App() {
       setReqErrors(errors);
       return;
     }
-    const newId = `R-${Date.now().toString().slice(-4)}`;
-    setRequirements([{ ...reqModal.data, id: newId }, ...requirements]);
+    const savedRequirement = await saveRecord(
+      API_ENDPOINTS.requirements,
+      reqModal.data,
+    );
+    setRequirements([savedRequirement, ...requirements]);
     toast.success('需求已创建');
     closeReqModal();
   };
 
-  const handleChangeReqStatus = (reqId, newStatus) => {
+  const handleChangeReqStatus = async (reqId, newStatus) => {
+    const target = requirements.find((r) => r.id === reqId);
+    if (!target) return;
+    const savedRequirement = await saveRecord(
+      API_ENDPOINTS.requirements,
+      { ...target, status: newStatus },
+      reqId,
+    );
     setRequirements(
       requirements.map((r) =>
-        r.id === reqId ? { ...r, status: newStatus } : r,
+        r.id === reqId ? savedRequirement : r,
       ),
     );
   };
@@ -321,12 +439,13 @@ export default function App() {
       tone: 'danger',
     });
     if (!ok) return;
+    await deleteRecord(API_ENDPOINTS.requirements, id);
     setRequirements(requirements.filter((r) => r.id !== id));
     toast.success('需求已删除');
   };
 
   // 任务 CRUD
-  const handleSaveTask = (e) => {
+  const handleSaveTask = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!taskModal.data.title?.trim()) errors.title = '任务名称不能为空';
@@ -336,18 +455,23 @@ export default function App() {
       return;
     }
     if (taskModal.isEdit) {
+      const savedTask = await saveRecord(
+        API_ENDPOINTS.tasks,
+        taskModal.data,
+        taskModal.data.id,
+      );
       setTasks(
         tasks.map((t) =>
-          t.id === taskModal.data.id ? { ...t, ...taskModal.data } : t,
+          t.id === savedTask.id ? savedTask : t,
         ),
       );
       toast.success('任务已更新');
     } else {
-      const newId = `T-${Date.now().toString().slice(-4)}`;
-      setTasks([
-        ...tasks,
-        { ...taskModal.data, id: newId, status: 'todo' },
-      ]);
+      const savedTask = await saveRecord(API_ENDPOINTS.tasks, {
+        ...taskModal.data,
+        status: 'todo',
+      });
+      setTasks([...tasks, savedTask]);
       toast.success('任务已创建');
     }
     closeTaskModal();
@@ -362,12 +486,19 @@ export default function App() {
     setDraggingTaskId(null);
     setDragOverColumn(null);
   };
-  const handleDrop = (e, targetStatus) => {
+  const handleDrop = async (e, targetStatus) => {
     e.preventDefault();
     const taskId = e.dataTransfer.getData('taskId');
+    const targetTask = tasks.find((task) => task.id === taskId);
+    if (!targetTask) return;
+    const savedTask = await saveRecord(
+      API_ENDPOINTS.tasks,
+      { ...targetTask, status: targetStatus },
+      taskId,
+    );
     setTasks(
       tasks.map((task) =>
-        task.id === taskId ? { ...task, status: targetStatus } : task,
+        task.id === taskId ? savedTask : task,
       ),
     );
     setDragOverColumn(null);
@@ -375,10 +506,17 @@ export default function App() {
   };
 
   // 通过按钮直接切换任务状态（归档 / 恢复时使用）
-  const handleChangeTaskStatus = (taskId, newStatus) => {
+  const handleChangeTaskStatus = async (taskId, newStatus) => {
+    const targetTask = tasks.find((task) => task.id === taskId);
+    if (!targetTask) return;
+    const savedTask = await saveRecord(
+      API_ENDPOINTS.tasks,
+      { ...targetTask, status: newStatus },
+      taskId,
+    );
     setTasks(
       tasks.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task,
+        task.id === taskId ? savedTask : task,
       ),
     );
     if (newStatus === 'archived') {
@@ -397,12 +535,13 @@ export default function App() {
       tone: 'danger',
     });
     if (!ok) return;
+    await deleteRecord(API_ENDPOINTS.tasks, id);
     setTasks(tasks.filter((t) => t.id !== id));
     toast.success('任务已删除');
   };
 
   // Bug CRUD
-  const handleSaveBug = (e) => {
+  const handleSaveBug = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!bugModal.data.title?.trim()) errors.title = 'Bug 标题不能为空';
@@ -413,25 +552,37 @@ export default function App() {
       return;
     }
     if (bugModal.isEdit) {
+      const savedBug = await saveRecord(
+        API_ENDPOINTS.bugs,
+        bugModal.data,
+        bugModal.data.id,
+      );
       setBugs(
         bugs.map((b) =>
-          b.id === bugModal.data.id ? { ...b, ...bugModal.data } : b,
+          b.id === savedBug.id ? savedBug : b,
         ),
       );
       toast.success('Bug 已更新');
     } else {
-      const newId = `B-${Date.now().toString().slice(-4)}`;
-      setBugs([
-        { ...bugModal.data, id: newId, status: bugModal.data.status || 'open' },
-        ...bugs,
-      ]);
+      const savedBug = await saveRecord(API_ENDPOINTS.bugs, {
+        ...bugModal.data,
+        status: bugModal.data.status || 'open',
+      });
+      setBugs([savedBug, ...bugs]);
       toast.success('Bug 已提交');
     }
     closeBugModal();
   };
 
-  const handleChangeBugStatus = (bugId, newStatus) => {
-    setBugs(bugs.map((b) => (b.id === bugId ? { ...b, status: newStatus } : b)));
+  const handleChangeBugStatus = async (bugId, newStatus) => {
+    const targetBug = bugs.find((b) => b.id === bugId);
+    if (!targetBug) return;
+    const savedBug = await saveRecord(
+      API_ENDPOINTS.bugs,
+      { ...targetBug, status: newStatus },
+      bugId,
+    );
+    setBugs(bugs.map((b) => (b.id === bugId ? savedBug : b)));
   };
 
   const handleDeleteBug = async (id) => {
@@ -443,37 +594,37 @@ export default function App() {
       tone: 'danger',
     });
     if (!ok) return;
+    await deleteRecord(API_ENDPOINTS.bugs, id);
     setBugs(bugs.filter((b) => b.id !== id));
     toast.success('Bug 已删除');
   };
 
   // --- 账户与权限控制 ---
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
-    const user = users.find(
-      (u) =>
-        u.username === loginData.username && u.password === loginData.password,
-    );
-    if (user) {
-      setCurrentUser(user);
+    try {
+      const session = await requestJson(API_ENDPOINTS.login, {
+        method: 'POST',
+        body: JSON.stringify(loginData),
+      });
+      persistSession(session);
+      const user = session.user;
       setActiveMenu('overview');
       toast.success(`欢迎回来，${user.username}`);
-    } else {
-      setLoginError('用户名或密码错误');
+    } catch (err) {
+      setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
     }
   };
 
   const handleLogout = () => {
-    setCurrentUser(null);
+    clearStoredSession();
   };
 
-  const handleChangePwd = (e) => {
+  const handleChangePwd = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!pwdModal.oldPwd) errors.oldPwd = '请输入原密码';
-    else if (currentUser.password !== pwdModal.oldPwd)
-      errors.oldPwd = '原密码错误';
     if (!pwdModal.newPwd) errors.newPwd = '请输入新密码';
     else if (pwdModal.newPwd.length < 6)
       errors.newPwd = '新密码至少 6 个字符';
@@ -483,17 +634,28 @@ export default function App() {
       setPwdErrors(errors);
       return;
     }
-    setUsers(
-      users.map((u) =>
-        u.id === currentUser.id ? { ...u, password: pwdModal.newPwd } : u,
-      ),
-    );
-    setCurrentUser({ ...currentUser, password: pwdModal.newPwd });
+    const nextUsername = currentUser.username;
+    try {
+      await requestJson(API_ENDPOINTS.password, {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: currentUser.id,
+          oldPassword: pwdModal.oldPwd,
+          newPassword: pwdModal.newPwd,
+        }),
+      });
+    } catch (err) {
+      setPwdErrors({ oldPwd: err.message || '\u539f\u5bc6\u7801\u9519\u8bef' });
+      return;
+    }
     closePwdModal();
+    setLoginData({ username: nextUsername, password: '' });
+    setActiveMenu('overview');
+    clearStoredSession();
     toast.success('密码修改成功');
   };
 
-  const handleAddUser = (e) => {
+  const handleAddUser = async (e) => {
     e.preventDefault();
     const errors = {};
     if (!userModal.username?.trim()) errors.username = '请输入用户名';
@@ -506,16 +668,11 @@ export default function App() {
       setUserErrors(errors);
       return;
     }
-    const newId = String(Date.now());
-    setUsers([
-      ...users,
-      {
-        id: newId,
-        username: userModal.username,
-        password: userModal.password,
-        role: userModal.role,
-      },
-    ]);
+    const savedUser = await requestJson(API_ENDPOINTS.users, {
+      method: 'POST',
+      body: JSON.stringify(userModal),
+    });
+    setUsers([...users, savedUser]);
     closeUserModal();
     toast.success('账户创建成功');
   };
@@ -528,6 +685,7 @@ export default function App() {
       tone: 'danger',
     });
     if (!ok) return;
+    await deleteRecord(API_ENDPOINTS.users, user.id);
     setUsers(users.filter((u) => u.id !== user.id));
     toast.success('用户已删除');
   };
@@ -950,6 +1108,7 @@ export default function App() {
                   projectId: projects[0]?.id || '',
                   priority: 'medium',
                   status: 'draft',
+                  attachments: [],
                 },
               })
             }
@@ -1052,6 +1211,12 @@ export default function App() {
                         需求方：{req.stakeholder}
                       </div>
                     )}
+                    {req.description && (
+                      <p className="mt-2 text-xs font-normal leading-relaxed text-slate-500 whitespace-pre-wrap">
+                        {req.description}
+                      </p>
+                    )}
+                    {renderAttachments(req.attachments)}
                   </td>
                   <td className="py-4 px-4 text-sm text-slate-600">
                     {getProjectName(req.projectId)}
@@ -1208,6 +1373,21 @@ export default function App() {
                 placeholder="补充背景、目标与验收标准..."
                 className={inputClass(false)}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                附件（图片/视频）
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={(e) =>
+                  handleAttachmentChange('requirement', e.target.files)
+                }
+                className={inputClass(false)}
+              />
+              {renderAttachments(reqModal.data.attachments)}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -1554,7 +1734,7 @@ export default function App() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   指派给
                 </label>
-                <input
+                <select
                   value={taskModal.data.assignee || ''}
                   onChange={(e) =>
                     setTaskModal({
@@ -1562,9 +1742,15 @@ export default function App() {
                       data: { ...taskModal.data, assignee: e.target.value },
                     })
                   }
-                  placeholder="输入姓名"
                   className={inputClass(false)}
-                />
+                >
+                  <option value="">未指派</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.username}>
+                      {user.username}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1667,6 +1853,7 @@ export default function App() {
                   severity: 'major',
                   assignee: '',
                   status: 'open',
+                  attachments: [],
                 },
               })
             }
@@ -1757,6 +1944,7 @@ export default function App() {
                 <div className="bg-slate-50 p-3 rounded border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap font-mono">
                   {bug.steps || '未提供复现步骤'}
                 </div>
+                {renderAttachments(bug.attachments)}
               </div>
             </div>
           ))}
@@ -1836,7 +2024,7 @@ export default function App() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   指派给
                 </label>
-                <input
+                <select
                   value={bugModal.data.assignee || ''}
                   onChange={(e) =>
                     setBugModal({
@@ -1844,9 +2032,15 @@ export default function App() {
                       data: { ...bugModal.data, assignee: e.target.value },
                     })
                   }
-                  placeholder="处理人姓名"
                   className={inputClass(false, 'red')}
-                />
+                >
+                  <option value="">未指派</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.username}>
+                      {user.username}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div>
@@ -1868,6 +2062,19 @@ export default function App() {
                 className={`${inputClass(!!bugErrors.steps, 'red')} font-mono text-sm`}
               />
               <FieldError id="bug-steps-err" message={bugErrors.steps} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                附件（图片/视频）
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                onChange={(e) => handleAttachmentChange('bug', e.target.files)}
+                className={inputClass(false, 'red')}
+              />
+              {renderAttachments(bugModal.data.attachments)}
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
