@@ -926,7 +926,7 @@ export default function App() {
                   onClick={() => setActiveMenu('projects')}
                 >
                   <div>
-                    <h4 className="font-medium text-slate-800">
+                    <h4 className="font-semibold text-slate-900">
                       {project.name}
                     </h4>
                     <span className="text-xs text-slate-400">
@@ -1305,7 +1305,7 @@ export default function App() {
         </div>
 
         <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-sm">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
                 <th className="font-medium py-3 px-4 min-w-[260px]">标题</th>
@@ -2541,7 +2541,7 @@ export default function App() {
       </div>
 
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse text-sm">
           <thead>
             <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
               <th className="font-medium py-3 px-4 w-1/3">用户名</th>
@@ -2658,7 +2658,7 @@ export default function App() {
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-slate-100 animate-in zoom-in-95 duration-300">
         <div className="flex justify-center mb-6">
           <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-            <LayoutDashboard size={28} className="text-white" />
+            <LayoutDashboard size={28} className="text-slate-900" />
           </div>
         </div>
         <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">
@@ -2759,10 +2759,10 @@ export default function App() {
 
   const sidebarContent = (
     <>
-      <div className="h-16 flex items-center justify-between px-6 mb-4">
+      <div className="h-[72px] flex items-center justify-between px-6 mb-2 border-b border-white/5">
         <div className="text-white font-bold text-xl flex items-center tracking-wide">
-          <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center mr-2 shadow-lg shadow-blue-600/20">
-            <LayoutDashboard size={18} className="text-white" />
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center mr-3 shadow-md">
+            <LayoutDashboard size={18} className="text-slate-900" />
           </div>
           ZenFlow
         </div>
@@ -2785,7 +2785,7 @@ export default function App() {
           <button
             key={menu.id}
             onClick={() => setActiveMenu(menu.id)}
-            className={`w-full flex items-center px-3 py-2.5 rounded transition-all duration-200 group ${activeMenu === menu.id ? 'bg-[#1677ff] text-white font-medium' : 'hover:bg-[#ffffff14] hover:text-white'}`}
+            className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${activeMenu === menu.id ? "bg-white/10 text-white font-medium shadow-sm ring-1 ring-white/10" : "hover:bg-white/5 hover:text-slate-200"}`}
           >
             <span
               className={`mr-3 ${activeMenu === menu.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-300'}`}
@@ -2830,9 +2830,9 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-screen bg-[#f4f5f7] font-sans overflow-hidden text-slate-800">
+    <div className="flex h-screen bg-[#FAFAFA] font-sans overflow-hidden text-slate-900 selection:bg-slate-900 selection:text-white">
       {/* 桌面端侧栏 */}
-      <aside className="hidden lg:flex w-[240px] bg-[#001529] text-slate-300 flex-col z-10 flex-shrink-0">
+      <aside className="hidden lg:flex w-[260px] bg-slate-950 text-slate-400 flex-col z-10 flex-shrink-0 shadow-xl border-r border-slate-800">
         {sidebarContent}
       </aside>
 
@@ -2846,7 +2846,7 @@ export default function App() {
           onClick={() => setMobileNavOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 h-full w-[260px] bg-[#001529] text-slate-300 flex flex-col shadow-2xl transition-transform duration-200 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`absolute left-0 top-0 h-full w-[280px] bg-slate-950 text-slate-400 flex flex-col shadow-2xl transition-transform duration-200 ${mobileNavOpen ? "translate-x-0" : "-translate-x-full"}`}
           role="dialog"
           aria-label="主导航"
         >
@@ -2857,7 +2857,7 @@ export default function App() {
       {/* 主内容区 */}
       <div className="flex-1 overflow-y-auto relative">
         {/* 移动端顶栏 */}
-        <div className="lg:hidden sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <div className="lg:hidden sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 flex items-center justify-between shadow-sm">
           <button
             type="button"
             aria-label="打开菜单"
