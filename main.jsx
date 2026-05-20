@@ -52,6 +52,36 @@ const REQUIREMENT_ATTACHMENT_MAX_FILES = 5;
 const REQUIREMENT_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024;
 const BUG_ATTACHMENT_MAX_FILES = 10;
 const BUG_ATTACHMENT_MAX_SIZE = 100 * 1024 * 1024;
+const REQUIREMENT_TYPE_OPTIONS = ['功能不完善', '设计缺陷', '高阶功能'];
+const IMPORTANCE_OPTIONS = ['重要', '一般'];
+const URGENCY_OPTIONS = ['紧急', '非紧急'];
+
+const createRequirementFormData = (projectId = '') => ({
+  title: '',
+  description: '',
+  stakeholder: '',
+  module: '',
+  requirementType: '功能不完善',
+  importance: '重要',
+  urgency: '非紧急',
+  devReply: '',
+  solution: '',
+  milestone: '',
+  result: '',
+  remark: '',
+  projectId,
+  priority: 'medium',
+  status: 'draft',
+  attachments: [],
+});
+
+const clearanceViewOptions = [
+  { id: 'all', label: '全部' },
+  { id: 'pendingReply', label: '待研发回复' },
+  { id: 'urgent', label: '紧急事项' },
+  { id: 'open', label: '未消项' },
+  { id: 'advanced', label: '高阶功能' },
+];
 
 const formatFileSize = (size) => {
   if (!Number.isFinite(size)) return '';
@@ -124,21 +154,15 @@ export default function App() {
 
   const [reqModal, setReqModal] = useState({
     isOpen: false,
-    data: {
-      title: '',
-      description: '',
-      stakeholder: '',
-      projectId: '',
-      priority: 'medium',
-      status: 'draft',
-      attachments: [],
-    },
+    isEdit: false,
+    data: createRequirementFormData(),
   });
   const [reqErrors, setReqErrors] = useState({});
   const [reqFilter, setReqFilter] = useState({
     projectId: 'all',
     priority: 'all',
     status: 'all',
+    clearanceView: 'all',
   });
 
   const [taskModal, setTaskModal] = useState({
@@ -383,7 +407,7 @@ export default function App() {
     setProjectErrors({});
   };
   const closeReqModal = () => {
-    setReqModal({ isOpen: false, data: {} });
+    setReqModal({ isOpen: false, isEdit: false, data: {} });
     setReqErrors({});
   };
   const closeTaskModal = () => {
@@ -469,9 +493,19 @@ export default function App() {
     const savedRequirement = await saveRecord(
       API_ENDPOINTS.requirements,
       reqModal.data,
+      reqModal.isEdit ? reqModal.data.id : undefined,
     );
-    setRequirements([savedRequirement, ...requirements]);
-    toast.success('需求已创建');
+    if (reqModal.isEdit) {
+      setRequirements(
+        requirements.map((r) =>
+          r.id === savedRequirement.id ? savedRequirement : r,
+        ),
+      );
+      toast.success('需求已更新');
+    } else {
+      setRequirements([savedRequirement, ...requirements]);
+      toast.success('需求已创建');
+    }
     closeReqModal();
   };
 
@@ -1140,13 +1174,29 @@ export default function App() {
 
   const renderRequirements = () => {
     const filteredRequirements = requirements.filter((req) => {
+      const isRequirementCleared = Boolean(req.result?.trim());
+      const matchClearanceView = (() => {
+        if (reqFilter.clearanceView === 'pendingReply') {
+          return !req.devReply?.trim() && !isRequirementCleared;
+        }
+        if (reqFilter.clearanceView === 'urgent') {
+          return req.urgency === '紧急' && !isRequirementCleared;
+        }
+        if (reqFilter.clearanceView === 'open') {
+          return !isRequirementCleared;
+        }
+        if (reqFilter.clearanceView === 'advanced') {
+          return req.requirementType === '高阶功能';
+        }
+        return true;
+      })();
       const matchProject =
         reqFilter.projectId === 'all' || req.projectId === reqFilter.projectId;
       const matchPriority =
         reqFilter.priority === 'all' || req.priority === reqFilter.priority;
       const matchStatus =
         reqFilter.status === 'all' || req.status === reqFilter.status;
-      return matchProject && matchPriority && matchStatus;
+      return matchClearanceView && matchProject && matchPriority && matchStatus;
     });
 
     return (
@@ -1161,15 +1211,8 @@ export default function App() {
             onClick={() =>
               setReqModal({
                 isOpen: true,
-                data: {
-                  title: '',
-                  description: '',
-                  stakeholder: '',
-                  projectId: projects[0]?.id || '',
-                  priority: 'medium',
-                  status: 'draft',
-                  attachments: [],
-                },
+                isEdit: false,
+                data: createRequirementFormData(projects[0]?.id || ''),
               })
             }
           >
@@ -1178,6 +1221,25 @@ export default function App() {
         </div>
 
         <div className="flex flex-wrap gap-4 mb-4 items-center">
+          <div className="flex flex-wrap gap-2">
+            {clearanceViewOptions.map((view) => (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() =>
+                  setReqFilter({ ...reqFilter, clearanceView: view.id })
+                }
+                className={`rounded-full px-3 py-1.5 text-sm transition ${
+                  reqFilter.clearanceView === view.id
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
+                }`}
+              >
+                {view.label}
+              </button>
+            ))}
+          </div>
+
           <select
             value={reqFilter.projectId}
             onChange={(e) =>
@@ -1223,7 +1285,8 @@ export default function App() {
 
           {(reqFilter.projectId !== 'all' ||
             reqFilter.priority !== 'all' ||
-            reqFilter.status !== 'all') && (
+            reqFilter.status !== 'all' ||
+            reqFilter.clearanceView !== 'all') && (
             <Button
               variant="ghost"
               size="sm"
@@ -1232,6 +1295,7 @@ export default function App() {
                   projectId: 'all',
                   priority: 'all',
                   status: 'all',
+                  clearanceView: 'all',
                 })
               }
             >
@@ -1240,19 +1304,29 @@ export default function App() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                <th className="font-medium py-3 px-4 w-1/3">标题</th>
-                <th className="font-medium py-3 px-4 w-1/4">项目</th>
+                <th className="font-medium py-3 px-4 min-w-[260px]">标题</th>
+                <th className="font-medium py-3 px-4 w-32">模块</th>
+                <th className="font-medium py-3 px-4 w-40">项目</th>
                 <th className="font-medium py-3 px-4 w-32 text-center">
-                  优先级
+                  需求类型
+                </th>
+                <th className="font-medium py-3 px-4 w-28 text-center">
+                  紧急程度
                 </th>
                 <th className="font-medium py-3 px-4 w-32 text-center">
                   状态
                 </th>
-                <th className="font-medium py-3 px-4 w-32 text-center">
+                <th className="font-medium py-3 px-4 min-w-[160px]">
+                  研发回复
+                </th>
+                <th className="font-medium py-3 px-4 min-w-[140px]">
+                  处理结果
+                </th>
+                <th className="font-medium py-3 px-4 w-40 text-center">
                   操作
                 </th>
               </tr>
@@ -1279,13 +1353,32 @@ export default function App() {
                     {renderAttachments(req.attachments)}
                   </td>
                   <td className="py-4 px-4 text-sm text-slate-600">
+                    {req.module || '-'}
+                  </td>
+                  <td className="py-4 px-4 text-sm text-slate-600">
                     {getProjectName(req.projectId)}
                   </td>
                   <td className="py-4 px-4 text-center">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded border ${priorityMap[req.priority].color}`}
+                      className={`text-xs px-2 py-0.5 rounded border ${priorityMap[req.priority]?.color || priorityMap.medium.color}`}
                     >
-                      {priorityMap[req.priority].label}
+                      {req.requirementType || priorityMap[req.priority]?.label || '中'}
+                    </span>
+                    {req.importance && (
+                      <div className="mt-1 text-[11px] text-slate-400">
+                        {req.importance}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-center">
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full ${
+                        req.urgency === '紧急'
+                          ? 'bg-red-50 text-red-600'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {req.urgency || '未设置'}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-center">
@@ -1295,8 +1388,29 @@ export default function App() {
                       {reqStatusMap[req.status].label}
                     </span>
                   </td>
+                  <td className="py-4 px-4 text-sm text-slate-600">
+                    {req.devReply || '-'}
+                  </td>
+                  <td className="py-4 px-4 text-sm text-slate-600">
+                    {req.result || '-'}
+                  </td>
                   <td className="py-4 px-4 text-center">
                     <div className="flex items-center justify-center gap-2">
+                      <IconButton
+                        label="编辑需求"
+                        onClick={() =>
+                          setReqModal({
+                            isOpen: true,
+                            isEdit: true,
+                            data: {
+                              ...createRequirementFormData(req.projectId),
+                              ...req,
+                            },
+                          })
+                        }
+                      >
+                        <Edit size={14} />
+                      </IconButton>
                       <select
                         value={req.status}
                         onChange={(e) =>
@@ -1324,7 +1438,7 @@ export default function App() {
               ))}
               {filteredRequirements.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="py-2">
+                  <td colSpan="9" className="py-2">
                     <EmptyState
                       icon={<Inbox size={22} />}
                       title={
@@ -1345,7 +1459,12 @@ export default function App() {
           </table>
         </div>
 
-        <Modal open={reqModal.isOpen} onClose={closeReqModal} title="新建需求" size="md">
+        <Modal
+          open={reqModal.isOpen}
+          onClose={closeReqModal}
+          title={reqModal.isEdit ? '编辑需求' : '新建需求'}
+          size="md"
+        >
           <form
             onSubmit={handleSaveRequirement}
             className="p-6 space-y-4"
@@ -1401,6 +1520,90 @@ export default function App() {
                 message={reqErrors.projectId}
               />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  模块
+                </label>
+                <input
+                  value={reqModal.data.module || ''}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, module: e.target.value },
+                    })
+                  }
+                  placeholder="例如：流程可被打断"
+                  className={inputClass(false)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  需求类型
+                </label>
+                <select
+                  value={reqModal.data.requirementType || '功能不完善'}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: {
+                        ...reqModal.data,
+                        requirementType: e.target.value,
+                      },
+                    })
+                  }
+                  className={inputClass(false)}
+                >
+                  {REQUIREMENT_TYPE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  重要程度
+                </label>
+                <select
+                  value={reqModal.data.importance || '重要'}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, importance: e.target.value },
+                    })
+                  }
+                  className={inputClass(false)}
+                >
+                  {IMPORTANCE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  紧急程度
+                </label>
+                <select
+                  value={reqModal.data.urgency || '非紧急'}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, urgency: e.target.value },
+                    })
+                  }
+                  className={inputClass(false)}
+                >
+                  {URGENCY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 需求方
@@ -1431,6 +1634,91 @@ export default function App() {
                   })
                 }
                 placeholder="补充背景、目标与验收标准..."
+                className={inputClass(false)}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  研发回复
+                </label>
+                <textarea
+                  rows="3"
+                  value={reqModal.data.devReply || ''}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, devReply: e.target.value },
+                    })
+                  }
+                  placeholder="记录研发侧答复..."
+                  className={inputClass(false)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  解决方案
+                </label>
+                <textarea
+                  rows="3"
+                  value={reqModal.data.solution || ''}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, solution: e.target.value },
+                    })
+                  }
+                  placeholder="记录拟定方案..."
+                  className={inputClass(false)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  时间节点
+                </label>
+                <input
+                  value={reqModal.data.milestone || ''}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, milestone: e.target.value },
+                    })
+                  }
+                  placeholder="例如：本周测试"
+                  className={inputClass(false)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  处理结果
+                </label>
+                <input
+                  value={reqModal.data.result || ''}
+                  onChange={(e) =>
+                    setReqModal({
+                      ...reqModal,
+                      data: { ...reqModal.data, result: e.target.value },
+                    })
+                  }
+                  placeholder="填写后视为已消项"
+                  className={inputClass(false)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                备注
+              </label>
+              <textarea
+                rows="2"
+                value={reqModal.data.remark || ''}
+                onChange={(e) =>
+                  setReqModal({
+                    ...reqModal,
+                    data: { ...reqModal.data, remark: e.target.value },
+                  })
+                }
+                placeholder="补充消项过程中的其他信息..."
                 className={inputClass(false)}
               />
             </div>
@@ -1495,7 +1783,7 @@ export default function App() {
               <Button variant="secondary" onClick={closeReqModal}>
                 取消
               </Button>
-              <Button type="submit">创建</Button>
+              <Button type="submit">{reqModal.isEdit ? '保存更改' : '创建'}</Button>
             </div>
           </form>
         </Modal>
