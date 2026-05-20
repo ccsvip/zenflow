@@ -326,6 +326,7 @@ export default function App() {
               {canRemove && (
                 <button
                   type="button"
+                  aria-label={"移除附件 " + attachment.name}
                   onClick={() => onRemove?.(attachment.id)}
                   className="rounded px-2 py-1 text-xs text-red-500 hover:bg-red-50"
                 >
@@ -912,6 +913,7 @@ export default function App() {
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h2 className="font-semibold text-slate-800">最近项目</h2>
               <button
+                aria-label="查看全部最近项目"
                 className="text-blue-600 text-sm hover:underline"
                 onClick={() => setActiveMenu('projects')}
               >
@@ -959,6 +961,7 @@ export default function App() {
                 </span>
               </h2>
               <button
+                aria-label="查看全部高优待办 Bug"
                 className="text-blue-600 text-sm hover:underline"
                 onClick={() => setActiveMenu('bugs')}
               >
@@ -1226,6 +1229,7 @@ export default function App() {
               <button
                 key={view.id}
                 type="button"
+                aria-pressed={reqFilter.clearanceView === view.id}
                 onClick={() =>
                   setReqFilter({ ...reqFilter, clearanceView: view.id })
                 }
@@ -2695,6 +2699,8 @@ export default function App() {
                   setLoginData({ ...loginData, username: e.target.value });
                   setLoginError('');
                 }}
+                aria-invalid={!!loginError}
+                aria-describedby={loginError ? 'login-error-msg' : undefined}
                 className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
@@ -2725,6 +2731,8 @@ export default function App() {
                   setLoginData({ ...loginData, password: e.target.value });
                   setLoginError('');
                 }}
+                aria-invalid={!!loginError}
+                aria-describedby={loginError ? 'login-error-msg' : undefined}
                 className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
@@ -2736,6 +2744,7 @@ export default function App() {
           </div>
           {loginError && (
             <p
+              id="login-error-msg"
               role="alert"
               className="text-sm text-red-500 bg-red-50 border border-red-200 rounded px-3 py-2"
             >
