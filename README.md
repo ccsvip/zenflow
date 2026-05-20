@@ -62,7 +62,7 @@ cp .env.example .env
 主要配置项：
 
 - `WEB_PORT=3000`：浏览器访问端口
-- `DB_PORT=5432`：PostgreSQL 数据库端口
+- `DB_PORT=15432`：PostgreSQL 数据库端口（宿主机访问端口，避开本机 PostgreSQL 默认 5432）
 - `DB_NAME=zenflow`：数据库名称
 - `DB_USER=zenflow`：数据库用户名
 - `DB_PASSWORD=zenflow123`：数据库密码
