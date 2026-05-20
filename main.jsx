@@ -2654,11 +2654,17 @@ export default function App() {
   );
 
   const renderLogin = () => (
-    <div className="flex h-screen w-screen bg-slate-50 items-center justify-center font-sans p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-slate-100 animate-in zoom-in-95 duration-300">
+    <div className="flex h-screen w-screen bg-slate-50 items-center justify-center font-sans p-4 relative overflow-hidden">
+      {/* 动态模糊背景色块 */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-400/30 mix-blend-multiply filter blur-3xl opacity-70 animate-blob"></div>
+      <div className="absolute top-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-purple-400/30 mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+      <div className="absolute bottom-[-20%] left-[20%] w-[40vw] h-[40vw] rounded-full bg-cyan-400/30 mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+
+      <div className="bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-sm border border-white/50 animate-in zoom-in-95 duration-300 relative z-10">
         <div className="flex justify-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-            <LayoutDashboard size={28} className="text-slate-900" />
+          <div className="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-600/30 relative">
+            <div className="absolute inset-0 bg-white/20 rounded-2xl blur-[2px] opacity-0 transition-opacity"></div>
+            <LayoutDashboard size={30} className="text-white relative z-10" />
           </div>
         </div>
         <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">
@@ -2689,7 +2695,7 @@ export default function App() {
                   setLoginData({ ...loginData, username: e.target.value });
                   setLoginError('');
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all ${
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -2719,7 +2725,7 @@ export default function App() {
                   setLoginData({ ...loginData, password: e.target.value });
                   setLoginError('');
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all ${
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -2736,7 +2742,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full">
+          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
@@ -2830,7 +2836,8 @@ export default function App() {
   );
 
   return (
-    <div className="flex h-screen bg-[#FAFAFA] font-sans overflow-hidden text-slate-900 selection:bg-slate-900 selection:text-white">
+    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden text-slate-900 selection:bg-slate-900 selection:text-white relative bg-dot-pattern">
+      <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/50 via-transparent to-purple-50/50 pointer-events-none"></div>
       {/* 桌面端侧栏 */}
       <aside className="hidden lg:flex w-[260px] bg-slate-950 text-slate-400 flex-col z-10 flex-shrink-0 shadow-xl border-r border-slate-800">
         {sidebarContent}
@@ -2855,7 +2862,27 @@ export default function App() {
       </div>
 
       {/* 主内容区 */}
-      <div className="flex-1 overflow-y-auto relative">
+      <div className="flex-1 overflow-y-auto relative bg-transparent">
+        {/* 顶部标题栏/导览可以放这里 */}
+        <header className="hidden lg:flex sticky top-0 z-20 bg-white/60 backdrop-blur-xl border-b border-white/40 px-8 py-4 items-center justify-between shadow-sm">
+          <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+            {
+              {
+                overview: "数据概览",
+                projects: "项目管理",
+                requirements: "需求池",
+                tasks: "任务看板",
+                bugs: "缺陷追踪",
+                members: "成员管理"
+              }[activeMenu]
+            }
+          </h2>
+          <div className="flex items-center space-x-4">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-100 text-blue-600 flex items-center justify-center font-bold text-sm shadow-sm border border-white">
+              {currentUser?.username?.charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </header>
         {/* 移动端顶栏 */}
         <div className="lg:hidden sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 flex items-center justify-between shadow-sm">
           <button
