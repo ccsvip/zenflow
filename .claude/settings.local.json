@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -tuln)",
+      "Bash(pnpm dev *)",
+      "Bash(docker-compose up *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"node\")",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(docker-compose ps *)"
+    ]
+  }
+}
