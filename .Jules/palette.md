@@ -1,0 +1,3 @@
+## 2024-05-24 - Missing label associations in forms
+**Learning:** Many form controls (especially inputs and textareas) in modals across this app lack proper `id` and `htmlFor` associations. While some visually present labels exist, they are not programmatically linked, which causes issues for screen reader users and affects the click area. There is also an inconsistent usage of `aria-label` for controls without visual labels like filter dropdowns.
+**Action:** In future UX/A11y passes, prioritize adding `id` to all form inputs and `htmlFor` to their corresponding labels to ensure programmatic association. Also check for missing `aria-label`s on controls without visual labels.

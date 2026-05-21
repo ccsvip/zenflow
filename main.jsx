@@ -215,6 +215,7 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // 看板拖拽视觉反馈
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -697,6 +698,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setLoginLoading(true);
     try {
       const session = await requestJson(API_ENDPOINTS.login, {
         method: 'POST',
@@ -708,6 +710,8 @@ export default function App() {
       toast.success(`欢迎回来，${user.username}`);
     } catch (err) {
       setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -1245,6 +1249,7 @@ export default function App() {
             onChange={(e) =>
               setReqFilter({ ...reqFilter, projectId: e.target.value })
             }
+            aria-label="筛选项目"
             className="text-sm border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white min-w-[150px]"
           >
             <option value="all">全部项目</option>
@@ -1260,6 +1265,7 @@ export default function App() {
             onChange={(e) =>
               setReqFilter({ ...reqFilter, priority: e.target.value })
             }
+            aria-label="筛选优先级"
             className="text-sm border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white min-w-[120px]"
           >
             <option value="all">所有优先级</option>
@@ -1273,6 +1279,7 @@ export default function App() {
             onChange={(e) =>
               setReqFilter({ ...reqFilter, status: e.target.value })
             }
+            aria-label="筛选状态"
             className="text-sm border border-slate-300 rounded-lg px-3 py-2 outline-none focus:border-blue-500 bg-white min-w-[120px]"
           >
             <option value="all">所有状态</option>
@@ -2742,7 +2749,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+          <Button type="submit" size="lg" loading={loginLoading} className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
