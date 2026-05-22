@@ -215,6 +215,7 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // 看板拖拽视觉反馈
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -697,6 +698,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setIsLoggingIn(true);
     try {
       const session = await requestJson(API_ENDPOINTS.login, {
         method: 'POST',
@@ -708,6 +710,8 @@ export default function App() {
       toast.success(`欢迎回来，${user.username}`);
     } catch (err) {
       setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -2690,6 +2694,7 @@ export default function App() {
               <input
                 id="login-username"
                 required
+                autoComplete="username"
                 value={loginData.username}
                 onChange={(e) => {
                   setLoginData({ ...loginData, username: e.target.value });
@@ -2720,6 +2725,7 @@ export default function App() {
                 id="login-password"
                 required
                 type="password"
+                autoComplete="current-password"
                 value={loginData.password}
                 onChange={(e) => {
                   setLoginData({ ...loginData, password: e.target.value });
@@ -2742,7 +2748,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+          <Button type="submit" size="lg" loading={isLoggingIn} className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
