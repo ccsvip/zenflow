@@ -26,6 +26,8 @@ import {
   Archive,
   ArchiveRestore,
   Calendar,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
@@ -215,6 +217,8 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // 看板拖拽视觉反馈
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -697,6 +701,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setLoginLoading(true);
     try {
       const session = await requestJson(API_ENDPOINTS.login, {
         method: 'POST',
@@ -708,6 +713,8 @@ export default function App() {
       toast.success(`欢迎回来，${user.username}`);
     } catch (err) {
       setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -2719,19 +2726,27 @@ export default function App() {
               <input
                 id="login-password"
                 required
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={loginData.password}
                 onChange={(e) => {
                   setLoginData({ ...loginData, password: e.target.value });
                   setLoginError('');
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
+                className={`w-full pl-10 pr-10 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                 }`}
                 placeholder="请输入密码"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
           {loginError && (
@@ -2742,7 +2757,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+          <Button type="submit" size="lg" loading={loginLoading} className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
