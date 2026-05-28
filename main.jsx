@@ -33,6 +33,7 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FieldError } from '@/components/ui/FieldError';
+import { Spinner } from '@/components/ui/Spinner';
 import { useToast } from '@/components/ui/Toast';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 
@@ -214,6 +215,7 @@ export default function App() {
   const [loginData, setLoginData] = useState({ username: 'root', password: '1314520sm' });
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   // 看板拖拽视觉反馈
@@ -697,6 +699,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setLoginLoading(true);
     try {
       const session = await requestJson(API_ENDPOINTS.login, {
         method: 'POST',
@@ -708,6 +711,8 @@ export default function App() {
       toast.success(`欢迎回来，${user.username}`);
     } catch (err) {
       setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -2742,7 +2747,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+          <Button type="submit" size="lg" loading={loginLoading} className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
@@ -2900,14 +2905,30 @@ export default function App() {
         <div
           className={`p-4 sm:p-8 ${activeMenu === 'tasks' ? 'max-w-none' : 'max-w-[1400px]'} mx-auto h-full`}
         >
-          {activeMenu === 'overview' && renderOverview()}
-          {activeMenu === 'projects' && renderProjects()}
-          {activeMenu === 'requirements' && renderRequirements()}
-          {activeMenu === 'tasks' && renderTasks()}
-          {activeMenu === 'bugs' && renderBugs()}
-          {activeMenu === 'members' &&
-            currentUser.role === 'admin' &&
-            renderMembers()}
+          {dataLoading ? (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500">
+              <Spinner size={32} className="text-blue-500 mb-4" />
+              <p>数据加载中...</p>
+            </div>
+          ) : dataError ? (
+            <EmptyState
+              icon={<X size={24} className="text-red-500" />}
+              title="数据加载失败"
+              description={dataError}
+              action={<Button onClick={loadData}>重试</Button>}
+            />
+          ) : (
+            <>
+              {activeMenu === 'overview' && renderOverview()}
+              {activeMenu === 'projects' && renderProjects()}
+              {activeMenu === 'requirements' && renderRequirements()}
+              {activeMenu === 'tasks' && renderTasks()}
+              {activeMenu === 'bugs' && renderBugs()}
+              {activeMenu === 'members' &&
+                currentUser.role === 'admin' &&
+                renderMembers()}
+            </>
+          )}
         </div>
 
         {/* 修改密码 Modal */}
