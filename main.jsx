@@ -885,7 +885,7 @@ export default function App() {
               key={item.key}
               type="button"
               onClick={() => setActiveMenu(item.key)}
-              className="group text-left bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all"
+              className="group text-left bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -920,9 +920,10 @@ export default function App() {
             </div>
             <div className="p-2 overflow-y-auto">
               {recentProjects.map((project) => (
-                <div
+                <button
                   key={project.id}
-                  className="flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                  type="button"
+                  className="w-full text-left flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   onClick={() => setActiveMenu('projects')}
                 >
                   <div>
@@ -938,7 +939,7 @@ export default function App() {
                   >
                     {projectStatusMap[project.status].label}
                   </span>
-                </div>
+                </button>
               ))}
               {recentProjects.length === 0 && (
                 <EmptyState
@@ -967,9 +968,10 @@ export default function App() {
             </div>
             <div className="p-2 overflow-y-auto">
               {highPriorityBugs.map((bug) => (
-                <div
+                <button
                   key={bug.id}
-                  className="flex flex-col p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border-b border-slate-50 last:border-0"
+                  type="button"
+                  className="w-full text-left flex flex-col p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border-b border-slate-50 last:border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   onClick={() => setActiveMenu('bugs')}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -977,7 +979,7 @@ export default function App() {
                       {bug.title}
                     </h4>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-slate-500">
+                  <div className="flex justify-between items-center text-xs text-slate-500 w-full">
                     <span className="bg-slate-100 px-1.5 py-0.5 rounded">
                       {getProjectName(bug.projectId)}
                     </span>
@@ -986,7 +988,7 @@ export default function App() {
                       {bug.assignee || '未指派'}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
               {highPriorityBugs.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">

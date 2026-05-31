@@ -1,0 +1,3 @@
+## 2025-05-31 - [Keyboard Accessibility & Semantic HTML in Lists]
+**Learning:** In custom interactive lists (like "Recent Projects" or "High Priority Bugs"), using semantic HTML elements (`<button>`) instead of generic `<div onClick={...}>` is critical. Not only does it provide the correct role to screen readers, but adding clear focus indicators (e.g., `focus-visible:ring-2`) is also essential for keyboard users to navigate these custom lists effectively.
+**Action:** Always prefer `<button>` or `<a>` elements for clickable areas. When building lists of interactive items, ensure each item uses a semantic element and has a visible focus state that is distinct and helpful for keyboard navigation.
