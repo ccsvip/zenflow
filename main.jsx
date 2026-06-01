@@ -1241,6 +1241,7 @@ export default function App() {
           </div>
 
           <select
+            aria-label="筛选项目"
             value={reqFilter.projectId}
             onChange={(e) =>
               setReqFilter({ ...reqFilter, projectId: e.target.value })
@@ -1256,6 +1257,7 @@ export default function App() {
           </select>
 
           <select
+            aria-label="筛选优先级"
             value={reqFilter.priority}
             onChange={(e) =>
               setReqFilter({ ...reqFilter, priority: e.target.value })
@@ -1269,6 +1271,7 @@ export default function App() {
           </select>
 
           <select
+            aria-label="筛选状态"
             value={reqFilter.status}
             onChange={(e) =>
               setReqFilter({ ...reqFilter, status: e.target.value })
