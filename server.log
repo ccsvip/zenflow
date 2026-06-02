@@ -1,0 +1,17 @@
+
+> task-flow@0.1.0 dev /app
+> next dev
+
+   ▲ Next.js 15.1.6
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+ ✓ Ready in 1769ms
+ ○ Compiling / ...
+ ✓ Compiled / in 6.6s (669 modules)
+ GET / 200 in 7429ms
+ ○ Compiling /api/auth/login ...
+ ✓ Compiled /api/auth/login in 1191ms (693 modules)
+ POST /api/auth/login 500 in 1360ms
+ GET / 200 in 240ms

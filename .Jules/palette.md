@@ -1,0 +1,3 @@
+## 2026-06-02 - Fix div with onClick in Dashboard
+**Learning:** Found an accessibility issue pattern where `<div>` elements with `onClick` handlers were used for interactive lists in the Overview dashboard (recent projects and high priority bugs). This prevents keyboard navigation and lacks semantics for screen readers.
+**Action:** Replaced these `<div>` elements with semantically correct `<button type="button">`, maintained visual styling with `w-full text-left`, added visible focus indicators (`focus:outline-none focus:ring-2 focus:ring-blue-500`), and provided `aria-label` for screen readers.

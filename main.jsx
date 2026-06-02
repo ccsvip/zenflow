@@ -920,9 +920,11 @@ export default function App() {
             </div>
             <div className="p-2 overflow-y-auto">
               {recentProjects.map((project) => (
-                <div
+                <button
                   key={project.id}
-                  className="flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+                  type="button"
+                  aria-label={`查看项目：${project.name}`}
+                  className="w-full text-left flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onClick={() => setActiveMenu('projects')}
                 >
                   <div>
@@ -938,7 +940,7 @@ export default function App() {
                   >
                     {projectStatusMap[project.status].label}
                   </span>
-                </div>
+                </button>
               ))}
               {recentProjects.length === 0 && (
                 <EmptyState
@@ -967,9 +969,11 @@ export default function App() {
             </div>
             <div className="p-2 overflow-y-auto">
               {highPriorityBugs.map((bug) => (
-                <div
+                <button
                   key={bug.id}
-                  className="flex flex-col p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border-b border-slate-50 last:border-0"
+                  type="button"
+                  aria-label={`查看 Bug：${bug.title}`}
+                  className="w-full text-left flex flex-col p-4 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors border-b border-slate-50 last:border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onClick={() => setActiveMenu('bugs')}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -986,7 +990,7 @@ export default function App() {
                       {bug.assignee || '未指派'}
                     </span>
                   </div>
-                </div>
+                </button>
               ))}
               {highPriorityBugs.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
