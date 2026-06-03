@@ -1896,8 +1896,24 @@ export default function App() {
                               : 'border-slate-200 hover:shadow-md hover:border-blue-300',
                           ].join(' ')}
                         >
-                          {/* 归档 / 恢复 快捷按钮 */}
+                          {/* 快捷操作按钮 */}
                           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                            <button
+                              type="button"
+                              aria-label="编辑任务"
+                              title="编辑任务"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setTaskModal({
+                                  isOpen: true,
+                                  isEdit: true,
+                                  data: task,
+                                });
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                            >
+                              <Edit size={14} />
+                            </button>
                             <button
                               type="button"
                               aria-label={isArchived ? '从归档恢复' : '归档任务'}
@@ -1909,7 +1925,7 @@ export default function App() {
                                   isArchived ? 'todo' : 'archived',
                                 );
                               }}
-                              className="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50"
+                              className="p-1 rounded text-slate-400 hover:text-amber-600 hover:bg-amber-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                             >
                               {isArchived ? (
                                 <ArchiveRestore size={14} />
@@ -1925,7 +1941,7 @@ export default function App() {
                                 e.stopPropagation();
                                 handleDeleteTask(task.id);
                               }}
-                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50"
+                              className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                             >
                               <Trash2 size={14} />
                             </button>
