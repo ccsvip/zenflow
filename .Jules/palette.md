@@ -1,0 +1,3 @@
+## 2024-05-24 - [Avoid Hidden Double-Click Interactions for Core Actions]
+**Learning:** Using double-click interactions (like `onDoubleClick`) for core actions, such as editing a task in a Kanban board, creates a complete barrier for keyboard users and screen readers, making the action inaccessible. It also lowers discoverability for mouse and touch users who may not realize the element is interactive in that way.
+**Action:** Always provide explicit, focusable UI controls (like edit buttons) for core actions, even if a shortcut like double-click is also supported. Ensure these controls have proper `aria-label`s and are placed alongside other related actions.
