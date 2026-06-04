@@ -1,0 +1,3 @@
+## 2025-01-29 - Login Form Loading UX Pattern
+**Learning:** Adding a loading state to async forms is critical. When combining a `<Button>` component that supports a `loading` prop (which displays a spinner and handles button disablement) with form inputs, the inputs should also be explicitly disabled to prevent unexpected focus or modification during processing. Adding subtle styling changes like `disabled:opacity-60 disabled:cursor-not-allowed` to the inputs clearly communicates the system state.
+**Action:** When implementing async form submissions, consistently set a specific loading state (e.g. `isLoggingIn`, `isSubmitting`), pass it to the submit button's `loading` prop, disable all interactive form fields, and adjust input styling to reflect the disabled state.
