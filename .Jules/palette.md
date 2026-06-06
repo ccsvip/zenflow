@@ -1,0 +1,3 @@
+## 2024-06-06 - Add loading state to login form
+**Learning:** Adding visual loading feedback to async form submissions (like login) by disabling input fields and showing a loading spinner on the submit button significantly improves the user experience by preventing double clicks and clarifying that background processing is happening. The use of Tailwind disabled classes (`disabled:opacity-60 disabled:cursor-not-allowed`) ensures visual consistency.
+**Action:** When creating or modifying forms with async actions, ensure they have a loading state passed to the submit Button, and disable relevant input fields while the loading state is active.
