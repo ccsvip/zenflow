@@ -1,0 +1,1 @@
+## 2026-06-07 - Added loading state to login form\n**Learning:** Implementing disabled states during async operations with consistent Tailwind styling (`disabled:opacity-60 disabled:cursor-not-allowed`) creates a smoother user experience and prevents duplicate submissions.\n**Action:** Use this pattern across all async forms in the app.
