@@ -1,0 +1,3 @@
+## 2024-03-24 - Async Form Submission Loading States
+**Learning:** Establishing a consistent UX pattern for async form submissions greatly improves the interface's perceived reliability and prevents duplicate submissions.
+**Action:** Always pass a loading state to the submit `<Button>`'s `loading` prop, and explicitly disable all interactive form inputs with Tailwind disabled classes (e.g., `disabled:opacity-60 disabled:cursor-not-allowed`).
