@@ -1,0 +1,3 @@
+## 2025-02-23 - Async Form Submission Pattern
+**Learning:** During the implementation of the login form, I learned that a consistent UX pattern for async form submissions in this app is to show a loading spinner in the submit `<Button>` via its `loading` prop and explicitly disable all interactive form inputs using Tailwind disabled classes (`disabled:opacity-60 disabled:cursor-not-allowed`) to prevent duplicate submissions and give users immediate feedback.
+**Action:** When working on other async forms (like project creation, task editing, etc.) in the future, I will apply this exact same pattern to maintain a consistent UX throughout the design system.
