@@ -215,6 +215,7 @@ export default function App() {
   const [dataLoading, setDataLoading] = useState(false);
   const [dataError, setDataError] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // 看板拖拽视觉反馈
   const [dragOverColumn, setDragOverColumn] = useState(null);
@@ -697,6 +698,7 @@ export default function App() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
+    setLoginLoading(true);
     try {
       const session = await requestJson(API_ENDPOINTS.login, {
         method: 'POST',
@@ -708,6 +710,8 @@ export default function App() {
       toast.success(`欢迎回来，${user.username}`);
     } catch (err) {
       setLoginError(err.message || '\u767b\u5f55\u5931\u8d25');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -2690,12 +2694,13 @@ export default function App() {
               <input
                 id="login-username"
                 required
+                disabled={loginLoading}
                 value={loginData.username}
                 onChange={(e) => {
                   setLoginData({ ...loginData, username: e.target.value });
                   setLoginError('');
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm disabled:opacity-60 disabled:cursor-not-allowed ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -2719,13 +2724,14 @@ export default function App() {
               <input
                 id="login-password"
                 required
+                disabled={loginLoading}
                 type="password"
                 value={loginData.password}
                 onChange={(e) => {
                   setLoginData({ ...loginData, password: e.target.value });
                   setLoginError('');
                 }}
-                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm ${
+                className={`w-full pl-10 pr-3 py-2 border rounded-lg outline-none transition-all bg-white/50 backdrop-blur-sm disabled:opacity-60 disabled:cursor-not-allowed ${
                   loginError
                     ? 'border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
@@ -2742,7 +2748,7 @@ export default function App() {
               {loginError}
             </p>
           )}
-          <Button type="submit" size="lg" className="w-full shadow-lg shadow-blue-500/30">
+          <Button type="submit" size="lg" loading={loginLoading} className="w-full shadow-lg shadow-blue-500/30">
             登录
           </Button>
         </form>
