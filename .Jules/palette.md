@@ -1,0 +1,3 @@
+## 2025-02-18 - Async Form Submission Loading UX
+**Learning:** When implementing async form submissions, passing a `loading` prop to the submit button is good, but interactive form inputs must also be explicitly disabled to prevent modifications while the request is in flight. Relying solely on the `disabled` attribute might not provide enough visual feedback if Tailwind styles aren't set up for it.
+**Action:** Establish a consistent UX pattern by explicitly adding Tailwind disabled classes (e.g., `disabled:opacity-60 disabled:cursor-not-allowed`) along with the `disabled` attribute to all interactive form inputs during async operations.
