@@ -1,0 +1,3 @@
+## 2024-05-15 - [Add Loading State to Login]
+**Learning:** Adding consistent async loading states and disabling interactive inputs to avoid multiple submissions and confusion. When submitting an async form, passing a loading state to the `<Button>` component and disabling inputs using Tailwind (`disabled:opacity-60 disabled:cursor-not-allowed`) creates a clearer UX, avoids duplicate network requests, and is essential for good accessibility.
+**Action:** Use this standard pattern (loading state in button + disabled state on inputs with visual indicators) on all async forms across the application.
