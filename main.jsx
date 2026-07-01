@@ -1105,10 +1105,11 @@ export default function App() {
       >
         <form onSubmit={handleSaveProject} className="p-6 space-y-4" noValidate>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label htmlFor="project-name" className="block text-sm font-medium text-slate-700 mb-1">
               项目名称 *
             </label>
             <input
+              id="project-name"
               value={projectModal.data.name || ''}
               onChange={(e) =>
                 setProjectModal({
@@ -1125,10 +1126,11 @@ export default function App() {
             <FieldError id="project-name-err" message={projectErrors.name} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label htmlFor="project-description" className="block text-sm font-medium text-slate-700 mb-1">
               项目描述
             </label>
             <textarea
+              id="project-description"
               rows="3"
               value={projectModal.data.description || ''}
               onChange={(e) =>
@@ -1141,10 +1143,11 @@ export default function App() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label htmlFor="project-status" className="block text-sm font-medium text-slate-700 mb-1">
               项目状态
             </label>
             <select
+              id="project-status"
               value={projectModal.data.status || 'planning'}
               onChange={(e) =>
                 setProjectModal({
